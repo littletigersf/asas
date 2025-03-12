@@ -3,34 +3,134 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login Successful</title>
+    <title>Famous Food 2025 Vote</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-        .message-container {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            width: 300px;
             text-align: center;
+            margin-top: 50px;
         }
-        .message-container h2 {
-            color: #28a745;
+        .vote-option {
+            margin: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            display: inline-block;
+            cursor: pointer;
+        }
+        .vote-option:hover {
+            background-color: #f0f0f0;
+        }
+        #chart-container {
+            width: 80%;
+            margin: 20px auto;
         }
     </style>
+    <!-- Chart.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <div class="message-container">
-        <h2>Login Successful!</h2>
-        <p>Welcome to the application.</p>
+    <h1>Famous Food 2025</h1>
+    <p>Vote for your favorite food:</p>
+    <div id="vote-options">
+        <div class="vote-option" data-food="Durian">Durian</div>
+        <div class="vote-option" data-food="Nasi lemak">Nasi lemak</div>
+        <div class="vote-option" data-food="Sushi">Sushi</div>
+        <div class="vote-option" data-food="Macdonald">Macdonald</div>
     </div>
+    <p id="vote-message"></p>
+
+    <!-- Bar Chart Container -->
+    <div id="chart-container">
+        <canvas id="vote-chart"></canvas>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
+        import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-database.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBHjZzg0IbL_JVuUEW4EpCA7nwzfBRW7Pg",
+            authDomain: "myweb-1c8ec.firebaseapp.com",
+            projectId: "myweb-1c8ec",
+            storageBucket: "myweb-1c8ec.firebasestorage.app",
+            messagingSenderId: "188926619292",
+            appId: "1:188926619292:web:e05a4f390614adcdc3c759",
+            measurementId: "G-YFQWWDZSP5"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        // Reference to the votes in the database
+        const votesRef = ref(database, 'votes');
+
+        // Initialize Chart.js
+        const ctx = document.getElementById('vote-chart').getContext('2d');
+        const voteChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Durian', 'Nasi lemak', 'Sushi', 'Macdonald'],
+                datasets: [{
+                    label: 'Votes',
+                    data: [0, 0, 0, 0], // Initial data
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.2)',
+                        'rgba(54, 162, 235, 0.2)',
+                        'rgba(75, 192, 192, 0.2)',
+                        'rgba(153, 102, 255, 0.2)'
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Function to handle vote
+        function vote(food) {
+            const foodRef = ref(database, `votes/${food}`);
+            update(foodRef, {
+                votes: (voteChart.data.datasets[0].data[voteChart.data.labels.indexOf(food)] || 0) + 1
+            });
+
+            document.getElementById('vote-message').innerText = `You voted for ${food}!`;
+        }
+
+        // Listen for changes in the database
+        onValue(votesRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                voteChart.data.datasets[0].data = [
+                    data.Durian?.votes || 0,
+                    data['Nasi lemak']?.votes || 0,
+                    data.Sushi?.votes || 0,
+                    data.Macdonald?.votes || 0
+                ];
+                voteChart.update();
+            }
+        });
+
+        // Add event listeners to vote options
+        document.querySelectorAll('.vote-option').forEach(option => {
+            option.addEventListener('click', () => {
+                vote(option.getAttribute('data-food'));
+            });
+        });
+    </script>
 </body>
 </html>
